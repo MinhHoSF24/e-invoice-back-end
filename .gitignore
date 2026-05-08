@@ -44,3 +44,6 @@ Thumbs.db
 .claude/settings.local.json
 
 .nx/polygraph
+
+.env
+docker/**/docker-data

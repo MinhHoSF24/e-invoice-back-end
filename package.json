@@ -4,16 +4,17 @@
   "license": "MIT",
   "scripts": {
     "prepare": "husky",
-    "nx:reset": "nx reset",
+    "nx:reset": "nx daemon --stop; node -e \"try{require('fs').rmSync('.nx/workspace-data',{recursive:true,force:true})}catch(e){}\"; nx reset",
     "nx:run-many": "nx run-many",
     "build": "pnpm nx:reset && pnpm nx:run-many -t build",
-    "dev": "pnpm nx:reset && pnpm nx:run-many -t serve"
+    "dev": "pnpm nx:run-many -t serve"
   },
   "private": true,
   "dependencies": {
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.0",
+    "@nestjs/microservices": "^11.1.19",
     "@nestjs/platform-express": "^11.0.0",
     "@nestjs/swagger": "^11.4.2",
     "axios": "^1.6.0",
