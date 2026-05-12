@@ -1,8 +1,7 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { CONFIGURATION, TConfigurationType } from '../configuration';
 import { ConfigModule } from '@nestjs/config';
+import { InvoiceModule } from './modules/invoice/invoice.module';
 
 @Module({
   imports: [
@@ -10,9 +9,10 @@ import { ConfigModule } from '@nestjs/config';
       isGlobal: true,
       load: [() => CONFIGURATION],
     }),
+    InvoiceModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {
   static CONFIGURATION: TConfigurationType = CONFIGURATION;

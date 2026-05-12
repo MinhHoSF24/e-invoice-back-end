@@ -1,6 +1,8 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger } from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger, HttpStatus } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
+import { RpcException } from '@nestjs/microservices';
+import { HTTP_MESSAGE } from '@common/constants/enum/http-message.enum';
 
 @Injectable()
 export class TcpLoggingInterceptor implements NestInterceptor {
@@ -29,7 +31,10 @@ export class TcpLoggingInterceptor implements NestInterceptor {
         Logger.error(
           `TCP >> Error Process '${processId}' >> handler: '${handlerName}' after ${duration}ms >> params: '${JSON.stringify(params)}' >> error: '${error.message}'`,
         );
-        throw error;
+        throw new RpcException({
+          code: error.status || error.code || error.error?.code || HttpStatus.INTERNAL_SERVER_ERROR,
+          message: error?.response?.message || error?.message || HTTP_MESSAGE.INTERNAL_SERVER_ERROR,
+        });
       }),
     );
   }

@@ -35,8 +35,12 @@ export class ExceptionInterceptor implements NestInterceptor {
       }),
       catchError((error) => {
         const duration = Date.now() - Number(startTime);
-        const message = error?.response?.data?.message || error?.message || HTTP_MESSAGE.INTERNAL_SERVER_ERROR;
-        const rawCode = error?.response?.data?.code || error?.status;
+        const message =
+          error?.response?.data?.message ||
+          error?.response?.message ||
+          error?.message ||
+          HTTP_MESSAGE.INTERNAL_SERVER_ERROR;
+        const rawCode = error?.response?.data?.code || error?.status || error?.response?.statusCode;
         const code =
           Number.isInteger(rawCode) && rawCode >= 100 && rawCode <= 599 ? rawCode : HttpStatus.INTERNAL_SERVER_ERROR;
         this.logger.error(
@@ -46,7 +50,7 @@ export class ExceptionInterceptor implements NestInterceptor {
           new ResponseDTO<unknown>({
             statusCode: code,
             message: message,
-            data: error.response?.data || null,
+            data: error?.response?.data || error?.response || null,
             processId: processId as string,
             duration: `${duration}ms`,
           }),
