@@ -1,5 +1,5 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { BaseSchema } from './base.schema';
+import { Prop, Schema } from '@nestjs/mongoose';
+import { BaseSchema, createSchema } from './base.schema';
 import { Model } from 'mongoose';
 import { INVOICE_STATUS } from '@common/constants/enum/invoice.enum';
 
@@ -56,7 +56,7 @@ export class Invoice extends BaseSchema {
   fileUrl?: string;
 }
 
-export const InvoiceSchema = SchemaFactory.createForClass(Invoice);
+export const InvoiceSchema = createSchema(Invoice);
 export const InvoiceModelName = Invoice.name;
 export const InvoiceDestination = {
   name: InvoiceModelName,
