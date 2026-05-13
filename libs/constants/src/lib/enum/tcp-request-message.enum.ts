@@ -12,7 +12,14 @@ enum PRODUCT {
   DELETE_BY_ID = 'product.delete_by_id',
 }
 
+enum USER {
+  CREATE = 'user.create',
+  GET_ALL = 'user.get_all',
+  GET_BY_USER_ID = 'user.get_by_user_id',
+}
+
 export const TCP_REQUEST_MESSAGE = {
   INVOICE,
   PRODUCT,
+  USER,
 };

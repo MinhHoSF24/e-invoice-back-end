@@ -51,3 +51,18 @@ services:
       - ./docker/docker-data/pgadmin-data:/var/lib/pgadmin
     networks:
       - einvoice-network
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0.0
+    container_name: keycloak_25.0.0
+    ports:
+      - '8180:8080'
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    restart: unless-stopped
+    command: start-dev
+    networks:
+      - einvoice-network
+    volumes:
+      - ./docker/docker_data/keycloak_data:/opt/keycloak/data
