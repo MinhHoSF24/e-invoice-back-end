@@ -1,10 +1,19 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { CONFIGURATION, TConfigurationType } from '../configuration';
+import { ConfigModule } from '@nestjs/config';
+import { KeycloakModule } from './keycloak/keycloak.module';
 
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [() => CONFIGURATION],
+    }),
+    KeycloakModule,
+  ],
+  controllers: [],
+  providers: [],
 })
-export class AppModule {}
+export class AppModule {
+  static CONFIGURATION: TConfigurationType = CONFIGURATION;
+}

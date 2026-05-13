@@ -14,14 +14,14 @@ async function bootstrap() {
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.TCP,
     options: {
-      // host: AppModule.CONFIGURATION.TCP_CONFIG.TCP_USER_ACCESS_SERVICE.options?.host,
-      // port: AppModule.CONFIGURATION.TCP_CONFIG.TCP_USER_ACCESS_SERVICE.options?.port,
+      host: AppModule.CONFIGURATION.TCP_CONFIG.TCP_AUTHORIZE_SERVICE.options?.host,
+      port: AppModule.CONFIGURATION.TCP_CONFIG.TCP_AUTHORIZE_SERVICE.options?.port,
     },
   });
 
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
-  const port = process.env.USER_ACCESS_PORT || 3000;
+  const port = process.env.AUTHORIZE_SERVICE_PORT || 3000;
   await app.startAllMicroservices();
   await app.listen(port);
   Logger.log(`🚀 Application is running on: http://localhost:${port}/${globalPrefix}`);

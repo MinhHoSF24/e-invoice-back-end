@@ -6,6 +6,7 @@ export enum TCP_SERVICES {
   INVOICE_SERVICE = 'TCP_INVOICE_SERVICE',
   PRODUCT_SERVICE = 'TCP_PRODUCT_SERVICE',
   USER_ACCESS_SERVICE = 'TCP_USER_ACCESS_SERVICE',
+  AUTHORIZE_SERVICE = 'TCP_AUTHORIZE_SERVICE',
 }
 
 export class TcpConfiguration {
@@ -20,6 +21,10 @@ export class TcpConfiguration {
   @IsObject()
   @IsNotEmpty()
   TCP_USER_ACCESS_SERVICE: TcpClientOptions;
+
+  @IsObject()
+  @IsNotEmpty()
+  TCP_AUTHORIZE_SERVICE: TcpClientOptions;
 
   constructor() {
     Object.entries(TCP_SERVICES).forEach(([key, serviceName]) => {
