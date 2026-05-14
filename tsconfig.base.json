@@ -23,7 +23,8 @@
       "@common/interceptors/*": ["./libs/interceptors/src/lib/*"],
       "@common/decorators/*": ["./libs/decorators/src/lib/*"],
       "@common/schemas/*": ["./libs/schemas/src/lib/*"],
-      "@common/entities/*": ["./libs/entities/src/lib/*"]
+      "@common/entities/*": ["./libs/entities/src/lib/*"],
+      "@common/guards/*": ["./libs/guards/src/lib/*"]
     }
   },
   "exclude": ["node_modules", "tmp"]

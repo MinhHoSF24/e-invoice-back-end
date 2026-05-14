@@ -8,6 +8,7 @@ import { TCP_REQUEST_MESSAGE } from '@common/constants/enum/tcp-request-message.
 import { CreateTcpInvoiceRequest, InvoiceTcpResponse } from '@common/interfaces/tcp/invoice';
 import { ProcessId } from '@common/decorators/processId.decorator';
 import { map } from 'rxjs';
+import { Authorization } from '@common/decorators/authorizer.decorator';
 
 @ApiTags('Invoice')
 @Controller('invoice')
@@ -17,6 +18,7 @@ export class InvoiceController {
   @Post()
   @ApiOkResponse({ type: ResponseDTO<InvoiceResponseDTO> })
   @ApiOperation({ summary: 'Create a new invoice' })
+  @Authorization({ secured: true })
   create(@Body() body: CreateInvoiceRequestDto, @ProcessId() processId: string) {
     return this.invoiceClient
       .send<InvoiceTcpResponse, CreateTcpInvoiceRequest>(TCP_REQUEST_MESSAGE.INVOICE.CREATE, {

@@ -2,6 +2,9 @@ import { Module } from '@nestjs/common';
 import { CONFIGURATION, TConfigurationType } from '../configuration';
 import { ConfigModule } from '@nestjs/config';
 import { KeycloakModule } from './keycloak/keycloak.module';
+import { AuthorizerModule } from './authorizer/authorizer.module';
+import { ClientsModule } from '@nestjs/microservices';
+import { TCP_SERVICES, TcpProvider } from '@common/configuration/tcp.config';
 
 @Module({
   imports: [
@@ -10,6 +13,8 @@ import { KeycloakModule } from './keycloak/keycloak.module';
       load: [() => CONFIGURATION],
     }),
     KeycloakModule,
+    AuthorizerModule,
+    ClientsModule.register([TcpProvider(TCP_SERVICES.AUTHORIZE_SERVICE)]),
   ],
   controllers: [],
   providers: [],
