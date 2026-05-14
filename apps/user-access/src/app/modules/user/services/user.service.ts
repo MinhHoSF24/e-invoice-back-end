@@ -6,7 +6,7 @@ import { createUserRequestMapping } from '../mappers';
 import { TCP_SERVICES } from '@common/configuration/tcp.config';
 import { TcpClient } from '@common/interfaces/tcp/common/tcp-client.interface';
 import { TCP_REQUEST_MESSAGE } from '@common/constants/enum/tcp-request-message.enum';
-import { CreateKeycloakUserRequest } from '@common/interfaces/tcp/authorizer';
+import { CreateKeycloakUserTcpRequest } from '@common/interfaces/tcp/authorizer';
 import { firstValueFrom, map } from 'rxjs';
 
 @Injectable()
@@ -38,7 +38,7 @@ export class UserService {
     return this.userRepository.create(input);
   }
 
-  createKeycloakUser(data: CreateKeycloakUserRequest, processId?: string) {
+  createKeycloakUser(data: CreateKeycloakUserTcpRequest, processId?: string) {
     return firstValueFrom(
       this.authorizerClient
         .send<string>(TCP_REQUEST_MESSAGE.KEYCLOAK.CREATE_USER, {

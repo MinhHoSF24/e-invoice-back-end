@@ -1,4 +1,4 @@
-export type CreateKeycloakUserRequest = {
+export type CreateKeycloakUserTcpRequest = {
   email: string;
   firstName: string;
   lastName: string;
