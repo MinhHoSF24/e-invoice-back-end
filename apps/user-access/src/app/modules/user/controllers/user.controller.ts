@@ -1,4 +1,4 @@
-import { Controller, UseInterceptors } from '@nestjs/common';
+import { Controller, Logger, UseInterceptors } from '@nestjs/common';
 import { TcpLoggingInterceptor } from '@common/interceptors/tcpLogging.interceptor';
 import { UserService } from '../services/user.service';
 import { MessagePattern } from '@nestjs/microservices';
@@ -23,8 +23,8 @@ export class UserController {
 
   @MessagePattern(TCP_REQUEST_MESSAGE.USER.GET_BY_USER_ID)
   async getByUserId(@RequestParams() userId: string) {
+    Logger.debug(`Received request to get user by ID: ${userId}`, UserController.name);
     const user = await this.userService.getUserByUserId(userId);
-
-    return Response.success<User | null>(user);
+    return Response.success<User | unknown>(user);
   }
 }

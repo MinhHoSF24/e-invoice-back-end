@@ -6,9 +6,11 @@ export class BaseSchema {
   _id: ObjectId;
 
   @Virtual({
-    get: (doc: any) => doc._id.toString(),
+    get: function (this: { _id?: ObjectId }) {
+      return this?._id ? this._id.toString() : undefined;
+    },
   })
-  id: string;
+  id?: string;
 
   @Prop({ type: Date, default: new Date() })
   createdAt: Date;
@@ -17,7 +19,7 @@ export class BaseSchema {
   updatedAt: Date;
 }
 
-export const createSchema = <TClass = any>(target: Type<TClass>): any => {
+export const createSchema = <TClass extends BaseSchema>(target: Type<TClass>): any => {
   const schema = SchemaFactory.createForClass(target);
 
   schema.set('toJSON', { virtuals: true });

@@ -14,7 +14,7 @@ import { TCP_SERVICES, TcpProvider } from '@common/configuration/tcp.config';
     }),
     KeycloakModule,
     AuthorizerModule,
-    ClientsModule.register([TcpProvider(TCP_SERVICES.AUTHORIZE_SERVICE)]),
+    ClientsModule.registerAsync([TcpProvider(TCP_SERVICES.AUTHORIZE_SERVICE)]),
   ],
   controllers: [],
   providers: [],

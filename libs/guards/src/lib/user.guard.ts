@@ -7,6 +7,7 @@ import { TCP_REQUEST_MESSAGE } from '@common/constants/enum/tcp-request-message.
 import { TCP_SERVICES } from '@common/configuration/tcp.config';
 import { TcpClient } from '@common/interfaces/tcp/common/tcp-client.interface';
 import { AuthorizerResponse } from '@common/interfaces/tcp/authorizer';
+import { setUserData } from '@common/utils/request.util';
 
 @Injectable()
 export class UserGuard implements CanActivate {
@@ -37,6 +38,9 @@ export class UserGuard implements CanActivate {
       if (!result?.valid) {
         throw new UnauthorizedException('Token is invalid');
       }
+
+      setUserData(req, result);
+
       return true;
     } catch (error) {
       this.logger.error('Error verifying token', error);
