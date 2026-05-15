@@ -65,4 +65,4 @@ services:
     networks:
       - einvoice-network
     volumes:
-      - ./docker/docker_data/keycloak_data:/opt/keycloak/data
+      - ./docker/docker-data/keycloak-data:/opt/keycloak/data
