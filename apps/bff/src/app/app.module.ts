@@ -9,6 +9,8 @@ import { ProductModule } from './modules/product/product.module';
 import { UserModule } from './modules/user/user.module';
 import { AuthorizerModule } from './modules/authorizer/authorizer.module';
 import { UserGuard } from '@common/guards/user.guard';
+import { PermissionGuard } from '@common/guards/permission.guard';
+import { RedisProvider } from '@common/configuration/redis.config';
 
 @Module({
   imports: [
@@ -20,11 +22,13 @@ import { UserGuard } from '@common/guards/user.guard';
     ProductModule,
     UserModule,
     AuthorizerModule,
+    RedisProvider,
   ],
   controllers: [],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: ExceptionInterceptor },
     { provide: APP_GUARD, useClass: UserGuard },
+    { provide: APP_GUARD, useClass: PermissionGuard },
   ],
 })
 export class AppModule implements NestModule {

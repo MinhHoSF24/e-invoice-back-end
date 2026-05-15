@@ -9,8 +9,10 @@ import { CreateTcpInvoiceRequest, InvoiceTcpResponse } from '@common/interfaces/
 import { ProcessId } from '@common/decorators/processId.decorator';
 import { map } from 'rxjs';
 import { Authorization } from '@common/decorators/authorizer.decorator';
+import { Permissions } from '@common/decorators/permission.decorator';
 import { UserData } from '@common/decorators/user-data.decorator';
 import { AuthorizerMetaData } from '@common/interfaces/tcp/authorizer';
+import { PERMISSION } from '@common/constants/enum/role.enum';
 
 @ApiTags('Invoice')
 @Controller('invoice')
@@ -21,6 +23,7 @@ export class InvoiceController {
   @ApiOkResponse({ type: ResponseDTO<InvoiceResponseDTO> })
   @ApiOperation({ summary: 'Create a new invoice' })
   @Authorization({ secured: true })
+  @Permissions([PERMISSION.INVOICE_CREATE, PERMISSION.INVOICE_GET_BY_ID])
   create(
     @Body() body: CreateInvoiceRequestDto,
     @ProcessId() processId: string,

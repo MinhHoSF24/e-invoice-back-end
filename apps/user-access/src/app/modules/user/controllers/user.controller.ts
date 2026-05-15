@@ -25,6 +25,7 @@ export class UserController {
   async getByUserId(@RequestParams() userId: string) {
     Logger.debug(`Received request to get user by ID: ${userId}`, UserController.name);
     const user = await this.userService.getUserByUserId(userId);
+    Logger.debug('Fetched user data: >>>>>>', user, UserController.name);
     return Response.success<User | unknown>(user);
   }
 }
