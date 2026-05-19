@@ -19,9 +19,18 @@ async function bootstrap() {
     },
   });
 
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.GRPC,
+    options: {
+      package: AppModule.CONFIGURATION.GRPC_CONFIG.GRPC_AUTHORIZER_SERVICE.name,
+      protoPath: AppModule.CONFIGURATION.GRPC_CONFIG.GRPC_AUTHORIZER_SERVICE.options.protoPath,
+      url: AppModule.CONFIGURATION.GRPC_CONFIG.GRPC_AUTHORIZER_SERVICE.options.url,
+    },
+  });
+
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
-  const port = process.env.AUTHORIZE_SERVICE_PORT || 3000;
+  const port = process.env.AUTHORIZER_PORT || 3000;
   await app.startAllMicroservices();
   await app.listen(port);
   Logger.log(`🚀 Application is running on: http://localhost:${port}/${globalPrefix}`);

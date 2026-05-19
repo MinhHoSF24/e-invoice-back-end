@@ -11,6 +11,10 @@ import { AuthorizerModule } from './modules/authorizer/authorizer.module';
 import { UserGuard } from '@common/guards/user.guard';
 import { PermissionGuard } from '@common/guards/permission.guard';
 import { RedisProvider } from '@common/configuration/redis.config';
+import { ThrottlerProvider } from '@common/configuration/throttler.config';
+import { ThrottlerGuard } from '@nestjs/throttler';
+import { GRPC_SERVICES, GrpcProvider } from '@common/configuration/grpc.config';
+import { ClientsModule } from '@nestjs/microservices';
 
 @Module({
   imports: [
@@ -23,12 +27,15 @@ import { RedisProvider } from '@common/configuration/redis.config';
     UserModule,
     AuthorizerModule,
     RedisProvider,
+    ThrottlerProvider,
+    ClientsModule.registerAsync([GrpcProvider(GRPC_SERVICES.AUTHORIZER_SERVICE)]),
   ],
   controllers: [],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: ExceptionInterceptor },
     { provide: APP_GUARD, useClass: UserGuard },
     { provide: APP_GUARD, useClass: PermissionGuard },
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
 export class AppModule implements NestModule {
