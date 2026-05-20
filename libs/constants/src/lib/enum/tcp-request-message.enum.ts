@@ -3,6 +3,8 @@ enum INVOICE {
   GET_BY_ID = 'invoice.get_by_id',
   UPDATE_BY_ID = 'invoice.update_by_id',
   DELETE_BY_ID = 'invoice.delete_by_id',
+  SEND = 'invoice.send',
+  UPDATE_INVOICE_PAID = 'invoice.update_invoice_paid',
 }
 
 enum PRODUCT {
@@ -27,10 +29,20 @@ enum AUTHORIZER {
   VERIFY_USER_TOKEN = 'authorizer.verify_user_token',
 }
 
+enum PDF_GENERATOR {
+  CREATE_INVOICE_PDF = 'pdf_generator.create_invoice_pdf',
+}
+
+enum MEDIA {
+  UPLOAD_FILE = 'media.upload_file',
+}
+
 export const TCP_REQUEST_MESSAGE = {
   INVOICE,
   PRODUCT,
   USER,
   KEYCLOAK,
   AUTHORIZER,
+  PDF_GENERATOR,
+  MEDIA,
 };

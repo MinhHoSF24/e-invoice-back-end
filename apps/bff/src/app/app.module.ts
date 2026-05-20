@@ -15,6 +15,7 @@ import { ThrottlerProvider } from '@common/configuration/throttler.config';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { GRPC_SERVICES, GrpcProvider } from '@common/configuration/grpc.config';
 import { ClientsModule } from '@nestjs/microservices';
+import { WebhookModule } from './modules/webhook/webhook.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { ClientsModule } from '@nestjs/microservices';
     AuthorizerModule,
     RedisProvider,
     ThrottlerProvider,
+    WebhookModule,
     ClientsModule.registerAsync([GrpcProvider(GRPC_SERVICES.AUTHORIZER_SERVICE)]),
   ],
   controllers: [],
