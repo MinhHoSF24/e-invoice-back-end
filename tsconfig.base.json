@@ -24,7 +24,8 @@
       "@common/decorators/*": ["./libs/decorators/src/lib/*"],
       "@common/schemas/*": ["./libs/schemas/src/lib/*"],
       "@common/entities/*": ["./libs/entities/src/lib/*"],
-      "@common/guards/*": ["./libs/guards/src/lib/*"]
+      "@common/guards/*": ["./libs/guards/src/lib/*"],
+      "@common/kafka/*": ["./libs/kafka/src/lib/*"]
     }
   },
   "exclude": ["node_modules", "tmp"]

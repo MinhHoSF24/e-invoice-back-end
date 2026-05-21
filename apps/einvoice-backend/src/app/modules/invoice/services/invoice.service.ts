@@ -13,6 +13,7 @@ import { map } from 'rxjs/internal/operators/map';
 import { ObjectId } from 'mongodb';
 import { UploadFileTcpReq } from '@common/interfaces/tcp/media';
 import { PaymentService } from '../../payment/services/payment.service';
+import { KafkaService } from '@common/kafka/services/kafka.service';
 
 @Injectable()
 export class InvoiceService {
@@ -21,6 +22,7 @@ export class InvoiceService {
     @Inject(TCP_SERVICES.PDF_GENERATOR_SERVICE) private readonly pdfGeneratorClient: TcpClient,
     @Inject(TCP_SERVICES.MEDIA_SERVICE) private readonly mediaClient: TcpClient,
     private readonly paymentService: PaymentService,
+    private readonly kafkaService: KafkaService,
   ) {}
 
   create(params: CreateTcpInvoiceRequest) {
@@ -65,6 +67,11 @@ export class InvoiceService {
       status: INVOICE_STATUS.SENT,
       supervisorId: new ObjectId(userId),
       fileUrl,
+    });
+
+    this.kafkaService.emit('invoice-sent', {
+      invoiceId,
+      clientEmail: invoice.client.email,
     });
 
     return checkoutData.url;
