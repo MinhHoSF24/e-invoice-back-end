@@ -14,6 +14,7 @@ import { ObjectId } from 'mongodb';
 import { UploadFileTcpReq } from '@common/interfaces/tcp/media';
 import { PaymentService } from '../../payment/services/payment.service';
 import { KafkaService } from '@common/kafka/services/kafka.service';
+import { InvoiceSentPayload } from '@common/interfaces/queue/invoice';
 
 @Injectable()
 export class InvoiceService {
@@ -68,13 +69,10 @@ export class InvoiceService {
       supervisorId: new ObjectId(userId),
       fileUrl,
     });
-
-    this.kafkaService.emit('invoice-sent', {
-      invoiceId,
-      clientEmail: invoice.client.email,
+    this.kafkaService.emit<InvoiceSentPayload>('invoice-sent', {
+      id: invoiceId,
+      paymentLink: checkoutData.url || '',
     });
-
-    return checkoutData.url;
   }
 
   generatorInvoicePdf(data: Invoice, processId: string) {
@@ -101,5 +99,9 @@ export class InvoiceService {
 
   updateInvoicePaid(invoiceId: string) {
     return this.invoiceRepository.update(invoiceId, { status: INVOICE_STATUS.PAID });
+  }
+
+  getById(id: string) {
+    return this.invoiceRepository.findById(id);
   }
 }
