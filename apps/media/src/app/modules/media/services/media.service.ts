@@ -11,4 +11,8 @@ export class MediaService {
   async uploadFile(params: UploadFileTcpReq) {
     return await this.cloudinaryService.uploadFile(Buffer.from(params.fileBase64, 'base64'), params.fileName);
   }
+
+  async deleteFile(publicId: string) {
+    return await this.cloudinaryService.deleteFile(publicId);
+  }
 }

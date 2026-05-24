@@ -15,15 +15,23 @@ import { UploadFileTcpReq } from '@common/interfaces/tcp/media';
 import { PaymentService } from '../../payment/services/payment.service';
 import { KafkaService } from '@common/kafka/services/kafka.service';
 import { InvoiceSentPayload } from '@common/interfaces/queue/invoice';
+import { SagaService } from '@common/saga/saga.service';
+import { InvoiceSendSagaContext } from '@common/interfaces/saga/saga-step.interface';
+import { InvoiceSendSagaSteps } from '../sagas/invoice-send-saga-steps.service';
+import { SAGA_TYPE } from '@common/constants/enum/saga.enum';
 
 @Injectable()
 export class InvoiceService {
+  private readonly logger = new Logger(InvoiceService.name);
+
   constructor(
     private readonly invoiceRepository: InvoiceRepository,
     @Inject(TCP_SERVICES.PDF_GENERATOR_SERVICE) private readonly pdfGeneratorClient: TcpClient,
     @Inject(TCP_SERVICES.MEDIA_SERVICE) private readonly mediaClient: TcpClient,
     private readonly paymentService: PaymentService,
     private readonly kafkaService: KafkaService,
+    private readonly sagaSteps: InvoiceSendSagaSteps,
+    private readonly sagaOrchestation: SagaService,
   ) {}
 
   create(params: CreateTcpInvoiceRequest) {
@@ -48,54 +56,77 @@ export class InvoiceService {
     const invoice = await this.invoiceRepository.findById(invoiceId);
 
     if (!invoice) {
+      this.logger.error(`Invoice not found: ${invoiceId}`);
       throw new Error('Invoice not found');
     }
 
     if (invoice.status !== INVOICE_STATUS.CREATED) {
+      this.logger.error(`Invoice ${invoiceId} is not in a sendable state`);
       throw new BadRequestException(ERROR_CODE.INVOICE_CAN_NOT_BE_SENT);
     }
 
-    const pdfBase64 = await this.generatorInvoicePdf(invoice, processId);
-    if (!pdfBase64) {
-      throw new Error('Failed to generate PDF');
+    // const pdfBase64 = await this.generatorInvoicePdf(invoice, processId);
+    // if (!pdfBase64) {
+    //   throw new Error('Failed to generate PDF');
+    // }
+
+    // const fileUrl = await this.uploadFile({ fileBase64: pdfBase64, fileName: `invoice-${invoiceId}` }, processId);
+
+    // const checkoutData = await this.paymentService.createCheckoutSession(createCheckoutSessionMapping(invoice));
+
+    // await this.invoiceRepository.update(invoiceId, {
+    //   status: INVOICE_STATUS.SENT,
+    //   supervisorId: new ObjectId(userId),
+    //   fileUrl,
+    // });
+    // this.kafkaService.emit<InvoiceSentPayload>('invoice-sent', {
+    //   id: invoiceId,
+    //   paymentLink: checkoutData.url || '',
+    // });
+    // Execute saga
+    const context: InvoiceSendSagaContext = {
+      sagaId: '',
+      invoiceId,
+      userId,
+      processId,
+    };
+
+    const steps = this.sagaSteps.getSteps(invoice);
+
+    try {
+      await this.sagaOrchestation.execute(SAGA_TYPE.INVOICE_SEND, steps, context);
+
+      this.kafkaService.emit<InvoiceSentPayload>('invoice-sent', {
+        id: invoiceId,
+        paymentLink: context.paymentLink || '',
+      });
+    } catch (error: any) {
+      this.logger.error(`Failed to send invoice ${invoiceId}: ${error.message}`);
+      throw error;
     }
-
-    const fileUrl = await this.uploadFile({ fileBase64: pdfBase64, fileName: `invoice-${invoiceId}` }, processId);
-
-    const checkoutData = await this.paymentService.createCheckoutSession(createCheckoutSessionMapping(invoice));
-
-    await this.invoiceRepository.update(invoiceId, {
-      status: INVOICE_STATUS.SENT,
-      supervisorId: new ObjectId(userId),
-      fileUrl,
-    });
-    this.kafkaService.emit<InvoiceSentPayload>('invoice-sent', {
-      id: invoiceId,
-      paymentLink: checkoutData.url || '',
-    });
   }
 
-  generatorInvoicePdf(data: Invoice, processId: string) {
-    return firstValueFrom(
-      this.pdfGeneratorClient
-        .send<string, Invoice>(TCP_REQUEST_MESSAGE.PDF_GENERATOR.CREATE_INVOICE_PDF, {
-          data,
-          processId,
-        })
-        .pipe(map((data) => data.data)),
-    );
-  }
+  // generatorInvoicePdf(data: Invoice, processId: string) {
+  //   return firstValueFrom(
+  //     this.pdfGeneratorClient
+  //       .send<string, Invoice>(TCP_REQUEST_MESSAGE.PDF_GENERATOR.CREATE_INVOICE_PDF, {
+  //         data,
+  //         processId,
+  //       })
+  //       .pipe(map((data) => data.data)),
+  //   );
+  // }
 
-  uploadFile(data: UploadFileTcpReq, processId: string) {
-    return firstValueFrom(
-      this.mediaClient
-        .send<string, UploadFileTcpReq>(TCP_REQUEST_MESSAGE.MEDIA.UPLOAD_FILE, {
-          data,
-          processId,
-        })
-        .pipe(map((data) => data.data)),
-    );
-  }
+  // uploadFile(data: UploadFileTcpReq, processId: string) {
+  //   return firstValueFrom(
+  //     this.mediaClient
+  //       .send<string, UploadFileTcpReq>(TCP_REQUEST_MESSAGE.MEDIA.UPLOAD_FILE, {
+  //         data,
+  //         processId,
+  //       })
+  //       .pipe(map((data) => data.data)),
+  //   );
+  // }
 
   updateInvoicePaid(invoiceId: string) {
     return this.invoiceRepository.update(invoiceId, { status: INVOICE_STATUS.PAID });

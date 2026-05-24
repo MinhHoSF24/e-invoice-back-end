@@ -10,6 +10,8 @@ import { TCP_SERVICES, TcpProvider } from '@common/configuration/tcp.config';
 import { PaymentModule } from '../payment/payment.module';
 import { KafkaModule } from '@common/kafka/kafka.module';
 import { QUEUE_SERVICES } from '@common/constants/enum/queue.enum';
+import { SagaModule } from '@common/saga/saga.module';
+import { InvoiceSendSagaSteps } from './sagas/invoice-send-saga-steps.service';
 
 @Module({
   imports: [
@@ -21,8 +23,9 @@ import { QUEUE_SERVICES } from '@common/constants/enum/queue.enum';
     ]),
     PaymentModule,
     KafkaModule.register(QUEUE_SERVICES.INVOICE),
+    SagaModule.forRoot(),
   ],
   controllers: [InvoiceController],
-  providers: [InvoiceService, InvoiceRepository],
+  providers: [InvoiceService, InvoiceRepository, InvoiceSendSagaSteps],
 })
 export class InvoiceModule {}
