@@ -5,6 +5,7 @@ import { Type } from 'class-transformer';
 import { TcpConfiguration } from '@common/configuration/tcp.config';
 import { MongoConfiguration } from '@common/configuration/mongo.config';
 import { StripeConfiguration } from '@common/configuration/stripe.config';
+import { LokiConfiguration } from '@common/configuration/loki.config';
 
 export class Configuration extends BaseConfiguration {
   @ValidateNested()
@@ -22,6 +23,10 @@ export class Configuration extends BaseConfiguration {
   @ValidateNested()
   @Type(() => StripeConfiguration)
   STRIPE_CONFIG = new StripeConfiguration();
+
+  @ValidateNested()
+  @Type(() => LokiConfiguration)
+  LOKI_CONFIG = new LokiConfiguration();
 }
 
 export const CONFIGURATION = new Configuration();

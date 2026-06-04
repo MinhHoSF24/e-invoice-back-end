@@ -3,7 +3,8 @@ import { CONFIGURATION, TConfigurationType } from '../configuration';
 import { ConfigModule } from '@nestjs/config';
 import { InvoiceModule } from './modules/invoice/invoice.module';
 import { PaymentModule } from './modules/payment/payment.module';
-import { ClientsModule, Transport } from '@nestjs/microservices';
+import { LoggerModule } from '@common/observability/logger';
+import { MetricsModule } from '@common/observability/metrics';
 
 @Module({
   imports: [
@@ -13,6 +14,8 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
     }),
     InvoiceModule,
     PaymentModule,
+    LoggerModule.forRoot('einvoice-backend'),
+    MetricsModule,
   ],
   controllers: [],
   providers: [],

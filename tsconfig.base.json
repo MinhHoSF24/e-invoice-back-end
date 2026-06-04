@@ -26,7 +26,8 @@
       "@common/entities/*": ["./libs/entities/src/lib/*"],
       "@common/guards/*": ["./libs/guards/src/lib/*"],
       "@common/kafka/*": ["./libs/kafka/src/lib/*"],
-      "@common/saga/*": ["./libs/saga/src/lib/*"]
+      "@common/saga/*": ["./libs/saga/src/lib/*"],
+      "@common/observability/*": ["./libs/observability/src/lib/*"]
     }
   },
   "exclude": ["node_modules", "tmp"]

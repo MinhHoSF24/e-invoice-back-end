@@ -3,13 +3,21 @@
  * This is only a minimal backend to get started.
  */
 
+import { initTracing } from '@common/observability/tracing/tracing';
+
+initTracing('einvoice-backend-service');
+
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { Logger as PinoLogger } from '@common/observability/logger';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+  });
+  app.useLogger(app.get(PinoLogger));
 
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.TCP,
@@ -19,7 +27,7 @@ async function bootstrap() {
     },
   });
 
-  const globalPrefix = 'api';
+  const globalPrefix = AppModule.CONFIGURATION.GLOBAL_PREFIX;
   app.setGlobalPrefix(globalPrefix);
   const port = process.env.INVOICE_PORT || 3000;
   await app.startAllMicroservices();

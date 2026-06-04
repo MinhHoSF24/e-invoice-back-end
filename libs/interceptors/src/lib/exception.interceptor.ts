@@ -28,9 +28,13 @@ export class ExceptionInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       map((data: ResponseDTO<unknown>) => {
-        const duration = Date.now() - Number(startTime);
-        data.processId = processId as string;
-        data.duration = `${duration}ms`;
+        //check if data is instance of ResponseDTO, if so, add processId and duration to data
+        if (data instanceof ResponseDTO) {
+          const duration = Date.now() - Number(startTime);
+          data.processId = processId as string;
+          data.duration = `${duration}ms`;
+        }
+
         return data;
       }),
       catchError((error) => {
@@ -46,11 +50,17 @@ export class ExceptionInterceptor implements NestInterceptor {
         this.logger.error(
           `HTTP >> End Process '${processId}' >> path: '${request.url}' >> method: '${request.method}' >> error: '${message}' >> code: '${code}' >> in ${duration}ms`,
         );
+        const response = error.getResponse ? error.getResponse() : error.response;
+        const data = response ? { ...response } : null;
+        if (data && typeof data === 'object') {
+          delete data.message;
+          delete data.code;
+        }
         throw new HttpException(
           new ResponseDTO<unknown>({
             statusCode: code,
             message: message,
-            data: error?.response?.data || error?.response || null,
+            data,
             processId: processId as string,
             duration: `${duration}ms`,
           }),
