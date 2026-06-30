@@ -20,26 +20,29 @@ export class StripeService {
   }
 
   async createCheckoutSession(params: CreateCheckoutSessionRequest) {
-    const session = await this.stripe.checkout.sessions.create({
-      payment_method_types: ['card', 'amazon_pay', 'alipay'],
-      mode: 'payment',
-      success_url: this.configService.get('STRIPE_CONFIG.SUCCESS_URL'),
-      cancel_url: this.configService.get('STRIPE_CONFIG.CANCEL_URL'),
-      line_items: params.lineItems.map((item: any) => ({
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            name: item.name,
+    const session = await this.stripe.checkout.sessions.create(
+      {
+        payment_method_types: ['card', 'amazon_pay', 'alipay'],
+        mode: 'payment',
+        success_url: this.configService.get('STRIPE_CONFIG.SUCCESS_URL'),
+        cancel_url: this.configService.get('STRIPE_CONFIG.CANCEL_URL'),
+        line_items: params.lineItems.map((item: any) => ({
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: item.name,
+            },
+            unit_amount: item.price * 100,
           },
-          unit_amount: item.price * 100,
+          quantity: item.quantity,
+        })),
+        customer_email: params.clientEmail,
+        metadata: {
+          invoiceId: params.invoiceId,
         },
-        quantity: item.quantity,
-      })),
-      customer_email: params.clientEmail,
-      metadata: {
-        invoiceId: params.invoiceId,
       },
-    });
+      params.idempotencyKey ? { idempotencyKey: params.idempotencyKey } : undefined,
+    );
 
     return {
       url: session.url,

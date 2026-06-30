@@ -1,24 +1,18 @@
-import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InvoiceRepository } from '../repositories/invoice.repository';
 import { CreateTcpInvoiceRequest, SendInvoiceTcpReq } from '@common/interfaces/tcp/invoice';
-import { createCheckoutSessionMapping, InvoiceRequestMapper } from '../mappers';
+import { InvoiceRequestMapper } from '../mappers';
 import { INVOICE_STATUS } from '@common/constants/enum/invoice.enum';
 import { ERROR_CODE } from '@common/constants/enum/error-code.enum';
-import { TCP_SERVICES } from '@common/configuration/tcp.config';
-import { TcpClient } from '@common/interfaces/tcp/common/tcp-client.interface';
-import { Invoice } from '@common/schemas/invoice.schema';
-import { firstValueFrom } from 'rxjs/internal/firstValueFrom';
-import { TCP_REQUEST_MESSAGE } from '@common/constants/enum/tcp-request-message.enum';
-import { map } from 'rxjs/internal/operators/map';
 import { ObjectId } from 'mongodb';
-import { UploadFileTcpReq } from '@common/interfaces/tcp/media';
-import { PaymentService } from '../../payment/services/payment.service';
 import { KafkaService } from '@common/kafka/services/kafka.service';
 import { InvoiceSentPayload } from '@common/interfaces/queue/invoice';
 import { SagaService } from '@common/saga/saga.service';
 import { InvoiceSendSagaContext } from '@common/interfaces/saga/saga-step.interface';
 import { InvoiceSendSagaSteps } from '../sagas/invoice-send-saga-steps.service';
 import { SAGA_TYPE } from '@common/constants/enum/saga.enum';
+import { IdempotencyService, IDEMPOTENCY_SCOPE } from '@common/idempotency';
+import { HTTP_MESSAGE } from '@common/constants/enum/http-message.enum';
 
 @Injectable()
 export class InvoiceService {
@@ -26,24 +20,32 @@ export class InvoiceService {
 
   constructor(
     private readonly invoiceRepository: InvoiceRepository,
-    @Inject(TCP_SERVICES.PDF_GENERATOR_SERVICE) private readonly pdfGeneratorClient: TcpClient,
-    @Inject(TCP_SERVICES.MEDIA_SERVICE) private readonly mediaClient: TcpClient,
-    private readonly paymentService: PaymentService,
     private readonly kafkaService: KafkaService,
     private readonly sagaSteps: InvoiceSendSagaSteps,
     private readonly sagaOrchestation: SagaService,
+    private readonly idempotencyService: IdempotencyService,
   ) {}
 
   create(params: CreateTcpInvoiceRequest) {
-    //calculate total amount and vat amount
-    Logger.debug('>>>>>>>>>>>>>>> TCP Request: ', params);
-    const input = InvoiceRequestMapper(params);
-    //save to database
-    return this.invoiceRepository.create(input);
+    const idempotency = params.idempotency;
+
+    return this.idempotencyService.run(
+      {
+        scope: idempotency?.scope || IDEMPOTENCY_SCOPE.INVOICE_CREATE,
+        key: idempotency?.key || '',
+        requestHash: idempotency?.requestHash || '',
+      },
+      async () => {
+        Logger.debug('>>>>>>>>>>>>>>> TCP Request: ', params);
+        const input = InvoiceRequestMapper(params);
+        return this.invoiceRepository.create(input);
+      },
+    );
   }
 
   async sendById(params: SendInvoiceTcpReq, processId: string) {
     const { invoiceId, userId } = params;
+    const idempotency = params.idempotency;
 
     if (!ObjectId.isValid(invoiceId)) {
       throw new BadRequestException('Invalid invoice id');
@@ -53,83 +55,55 @@ export class InvoiceService {
       throw new BadRequestException('Invalid user id');
     }
 
-    const invoice = await this.invoiceRepository.findById(invoiceId);
+    return this.idempotencyService.run(
+      {
+        scope: idempotency?.scope || IDEMPOTENCY_SCOPE.INVOICE_SEND,
+        key: idempotency?.key || '',
+        requestHash: idempotency?.requestHash || '',
+        ttlMs: 72 * 60 * 60 * 1000,
+        lockMs: 5 * 60 * 1000,
+      },
+      async () => {
+        const invoice = await this.invoiceRepository.findById(invoiceId);
 
-    if (!invoice) {
-      this.logger.error(`Invoice not found: ${invoiceId}`);
-      throw new Error('Invoice not found');
-    }
+        if (!invoice) {
+          this.logger.error(`Invoice not found: ${invoiceId}`);
+          throw new Error('Invoice not found');
+        }
 
-    if (invoice.status !== INVOICE_STATUS.CREATED) {
-      this.logger.error(`Invoice ${invoiceId} is not in a sendable state`);
-      throw new BadRequestException(ERROR_CODE.INVOICE_CAN_NOT_BE_SENT);
-    }
+        if (invoice.status !== INVOICE_STATUS.CREATED) {
+          this.logger.error(`Invoice ${invoiceId} is not in a sendable state`);
+          throw new BadRequestException(ERROR_CODE.INVOICE_CAN_NOT_BE_SENT);
+        }
 
-    // const pdfBase64 = await this.generatorInvoicePdf(invoice, processId);
-    // if (!pdfBase64) {
-    //   throw new Error('Failed to generate PDF');
-    // }
+        const context: InvoiceSendSagaContext = {
+          sagaId: idempotency?.key || '',
+          invoiceId,
+          userId,
+          processId,
+        };
 
-    // const fileUrl = await this.uploadFile({ fileBase64: pdfBase64, fileName: `invoice-${invoiceId}` }, processId);
+        const steps = this.sagaSteps.getSteps(invoice);
 
-    // const checkoutData = await this.paymentService.createCheckoutSession(createCheckoutSessionMapping(invoice));
+        try {
+          await this.sagaOrchestation.execute(SAGA_TYPE.INVOICE_SEND, steps, context);
 
-    // await this.invoiceRepository.update(invoiceId, {
-    //   status: INVOICE_STATUS.SENT,
-    //   supervisorId: new ObjectId(userId),
-    //   fileUrl,
-    // });
-    // this.kafkaService.emit<InvoiceSentPayload>('invoice-sent', {
-    //   id: invoiceId,
-    //   paymentLink: checkoutData.url || '',
-    // });
-    // Execute saga
-    const context: InvoiceSendSagaContext = {
-      sagaId: '',
-      invoiceId,
-      userId,
-      processId,
-    };
+          this.kafkaService.emit<InvoiceSentPayload>('invoice-sent', {
+            id: invoiceId,
+            paymentLink: context.paymentLink || '',
+          });
 
-    const steps = this.sagaSteps.getSteps(invoice);
-
-    try {
-      await this.sagaOrchestation.execute(SAGA_TYPE.INVOICE_SEND, steps, context);
-
-      this.kafkaService.emit<InvoiceSentPayload>('invoice-sent', {
-        id: invoiceId,
-        paymentLink: context.paymentLink || '',
-      });
-    } catch (error: any) {
-      this.logger.error(`Failed to send invoice ${invoiceId}: ${error.message}`);
-      throw error;
-    }
+          return HTTP_MESSAGE.OK;
+        } catch (error: any) {
+          this.logger.error(`Failed to send invoice ${invoiceId}: ${error.message}`);
+          throw error;
+        }
+      },
+    );
   }
 
-  // generatorInvoicePdf(data: Invoice, processId: string) {
-  //   return firstValueFrom(
-  //     this.pdfGeneratorClient
-  //       .send<string, Invoice>(TCP_REQUEST_MESSAGE.PDF_GENERATOR.CREATE_INVOICE_PDF, {
-  //         data,
-  //         processId,
-  //       })
-  //       .pipe(map((data) => data.data)),
-  //   );
-  // }
-
-  // uploadFile(data: UploadFileTcpReq, processId: string) {
-  //   return firstValueFrom(
-  //     this.mediaClient
-  //       .send<string, UploadFileTcpReq>(TCP_REQUEST_MESSAGE.MEDIA.UPLOAD_FILE, {
-  //         data,
-  //         processId,
-  //       })
-  //       .pipe(map((data) => data.data)),
-  //   );
-  // }
-
   updateInvoicePaid(invoiceId: string) {
-    return this.invoiceRepository.update(invoiceId, { status: INVOICE_STATUS.PAID });
+    return this.invoiceRepository.markPaidIfUnpaid(invoiceId);
   }
 
   getById(id: string) {

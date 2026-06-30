@@ -3,7 +3,6 @@ import { CONFIGURATION, TConfigurationType } from '../configuration';
 import { ConfigModule } from '@nestjs/config';
 import { KeycloakModule } from './keycloak/keycloak.module';
 import { AuthorizerModule } from './authorizer/authorizer.module';
-import { ClientsModule } from '@nestjs/microservices';
 import { TCP_SERVICES, TcpProvider } from '@common/configuration/tcp.config';
 
 @Module({
@@ -14,10 +13,9 @@ import { TCP_SERVICES, TcpProvider } from '@common/configuration/tcp.config';
     }),
     KeycloakModule,
     AuthorizerModule,
-    ClientsModule.registerAsync([TcpProvider(TCP_SERVICES.AUTHORIZE_SERVICE)]),
   ],
   controllers: [],
-  providers: [],
+  providers: [TcpProvider(TCP_SERVICES.AUTHORIZE_SERVICE)],
 })
 export class AppModule {
   static CONFIGURATION: TConfigurationType = CONFIGURATION;

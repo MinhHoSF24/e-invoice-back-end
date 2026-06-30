@@ -1,0 +1,1 @@
+export const RESILIENCE_OPTIONS = Symbol('RESILIENCE_OPTIONS');

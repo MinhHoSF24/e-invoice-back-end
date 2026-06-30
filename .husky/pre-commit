@@ -1,2 +1,2 @@
-pnpx lint-staged
-nx run-many -t lint
+pnpm exec lint-staged
+pnpm nx run-many -t lint

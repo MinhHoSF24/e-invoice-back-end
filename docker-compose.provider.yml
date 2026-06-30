@@ -70,6 +70,9 @@ services:
   redis:
     image: redis
     container_name: redis_server
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy noeviction
+    mem_limit: 384m
+    memswap_limit: 384m
     ports:
       - '6379:6379'
     networks:

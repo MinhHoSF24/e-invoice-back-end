@@ -9,9 +9,10 @@ import { CreateTcpInvoiceRequest, InvoiceTcpResponse } from '@common/interfaces/
 import { SendInvoiceTcpReq } from '@common/interfaces/tcp/invoice';
 import { ProcessId } from '@common/decorators/processId.decorator';
 import { HTTP_MESSAGE } from '@common/constants/enum/http-message.enum';
+import { TcpServerTracingInterceptor } from '@common/interceptors/tracing-server.interceptor';
 
 @Controller()
-@UseInterceptors(TcpLoggingInterceptor)
+@UseInterceptors(TcpLoggingInterceptor, TcpServerTracingInterceptor)
 export class InvoiceController {
   constructor(private readonly invoiceService: InvoiceService) {}
 
@@ -26,8 +27,8 @@ export class InvoiceController {
     @RequestParams() params: SendInvoiceTcpReq,
     @ProcessId() processID: string,
   ): Promise<Response<string>> {
-    await this.invoiceService.sendById(params, processID);
-    return Response.success<string>(HTTP_MESSAGE.OK);
+    const result = await this.invoiceService.sendById(params, processID);
+    return Response.success<string>(result);
   }
 
   @MessagePattern(TCP_REQUEST_MESSAGE.INVOICE.UPDATE_INVOICE_PAID)

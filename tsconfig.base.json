@@ -27,7 +27,9 @@
       "@common/guards/*": ["./libs/guards/src/lib/*"],
       "@common/kafka/*": ["./libs/kafka/src/lib/*"],
       "@common/saga/*": ["./libs/saga/src/lib/*"],
-      "@common/observability/*": ["./libs/observability/src/lib/*"]
+      "@common/observability/*": ["./libs/observability/src/lib/*"],
+      "@common/resilience": ["./libs/resilience/src/index.ts"],
+      "@common/idempotency": ["./libs/idempotency/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

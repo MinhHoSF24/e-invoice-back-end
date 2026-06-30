@@ -6,6 +6,7 @@ import { TcpConfiguration } from '@common/configuration/tcp.config';
 import { MongoConfiguration } from '@common/configuration/mongo.config';
 import { StripeConfiguration } from '@common/configuration/stripe.config';
 import { LokiConfiguration } from '@common/configuration/loki.config';
+import { RedisConfiguration } from '@common/configuration/redis.config';
 
 export class Configuration extends BaseConfiguration {
   @ValidateNested()
@@ -27,6 +28,10 @@ export class Configuration extends BaseConfiguration {
   @ValidateNested()
   @Type(() => LokiConfiguration)
   LOKI_CONFIG = new LokiConfiguration();
+
+  @ValidateNested()
+  @Type(() => RedisConfiguration)
+  REDIS_CONFIG = new RedisConfiguration();
 }
 
 export const CONFIGURATION = new Configuration();

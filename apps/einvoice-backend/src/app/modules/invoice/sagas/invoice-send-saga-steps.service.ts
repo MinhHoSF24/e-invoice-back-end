@@ -114,7 +114,10 @@ export class InvoiceSendSagaSteps {
           try {
             this.logger.log(`Creating payment session for invoice ${context.invoiceId}`);
 
-            const checkoutData = await this.paymentService.createCheckoutSession(createCheckoutSessionMapping(invoice));
+            const checkoutData = await this.paymentService.createCheckoutSession({
+              ...createCheckoutSessionMapping(invoice),
+              idempotencyKey: `invoice-payment:${context.invoiceId}`,
+            });
 
             return {
               success: true,

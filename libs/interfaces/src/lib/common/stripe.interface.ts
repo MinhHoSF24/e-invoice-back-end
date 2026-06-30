@@ -6,4 +6,5 @@ export type CreateCheckoutSessionRequest = {
   }[];
   invoiceId: string;
   clientEmail: string;
+  idempotencyKey?: string;
 };

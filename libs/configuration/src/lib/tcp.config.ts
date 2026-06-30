@@ -1,6 +1,9 @@
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ClientsProviderAsyncOptions, TcpClientOptions, Transport } from '@nestjs/microservices';
+import { Provider } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { ClientProxyFactory, TcpClientOptions, Transport } from '@nestjs/microservices';
 import { IsNotEmpty, IsObject } from 'class-validator';
+import { createTracingClientProxy } from '@common/utils/tracing.util';
+import { createResilientClientProxy, ResilienceService } from '@common/resilience';
 
 export enum TCP_SERVICES {
   INVOICE_SERVICE = 'TCP_INVOICE_SERVICE',
@@ -56,13 +59,34 @@ export class TcpConfiguration {
   }
 }
 
-export function TcpProvider(serviceName: keyof TcpConfiguration): ClientsProviderAsyncOptions {
+export interface TcpProviderOptions {
+  resilient?: boolean;
+  traced?: boolean;
+}
+
+export const TcpProvider = (serviceName: keyof TcpConfiguration, options: TcpProviderOptions = {}): Provider => {
+  const { resilient = false, traced = true } = options;
+
   return {
-    name: serviceName,
-    imports: [ConfigModule],
-    inject: [ConfigService],
-    useFactory: (configService: ConfigService) => {
-      return configService.get(`TCP_CONFIG.${serviceName}`) as TcpClientOptions;
+    provide: serviceName,
+    inject: [ConfigService, { token: ResilienceService, optional: true }],
+    useFactory: (configService: ConfigService, resilienceService?: ResilienceService) => {
+      const option = configService.get(`TCP_CONFIG.${serviceName}`) as TcpClientOptions;
+      let client = ClientProxyFactory.create(option);
+
+      if (traced) {
+        client = createTracingClientProxy(client);
+      }
+
+      if (resilient) {
+        if (!resilienceService) {
+          throw new Error(`ResilienceModule.forRoot() must be imported before enabling resilience for ${serviceName}`);
+        }
+
+        client = createResilientClientProxy(client, resilienceService.getPolicy(serviceName));
+      }
+
+      return client;
     },
   };
-}
+};

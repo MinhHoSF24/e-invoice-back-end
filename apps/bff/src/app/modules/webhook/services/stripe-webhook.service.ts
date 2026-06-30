@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { firstValueFrom, map } from 'rxjs';
 import Stripe from 'stripe';
 import type { Stripe as StripeTypes } from 'stripe/cjs/stripe.core';
+import { createRequestHash, IdempotencyService, IDEMPOTENCY_SCOPE } from '@common/idempotency';
 
 @Injectable()
 export class StripeWebhookService {
@@ -15,6 +16,7 @@ export class StripeWebhookService {
   constructor(
     private configService: ConfigService,
     @Inject(TCP_SERVICES.INVOICE_SERVICE) private readonly invoiceClient: TcpClient,
+    private readonly idempotencyService: IdempotencyService,
   ) {
     this.stripe = new Stripe(configService.get('STRIPE_CONFIG.SECRET_KEY') || '', {
       apiVersion: '2026-04-22.dahlia',
@@ -27,6 +29,18 @@ export class StripeWebhookService {
     const event = this.verifyWebhookSignature(rawBody, signature);
     this.logger.debug('Received event: ', JSON.stringify(event, null, 2));
 
+    return this.idempotencyService.run(
+      {
+        scope: IDEMPOTENCY_SCOPE.STRIPE_WEBHOOK,
+        key: event.id,
+        requestHash: createRequestHash({ id: event.id, type: event.type, created: event.created }),
+        ttlMs: 30 * 24 * 60 * 60 * 1000,
+      },
+      async () => this.dispatchEvent(event, processId),
+    );
+  }
+
+  private async dispatchEvent(event: StripeTypes.Event, processId: string) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as StripeTypes.Checkout.Session;

@@ -1,0 +1,16 @@
+{
+  "name": "resilience",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/resilience/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project resilience --web",
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --config libs/resilience/jest.config.cts"
+      }
+    }
+  }
+}
